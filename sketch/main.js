@@ -17,7 +17,7 @@ let handPose;
 let hands = [];
 let walls = [];
 let balls = [];
-let ballRadius = 10; // 공의 반지름
+let ballRadius = 20; // 공의 반지름
 let colNum = 40; // 한 줄에 배치할 공 개수
 let rowNum = 9; // 줄의 개수
 let padding = 20; // 공 사이 간격
@@ -39,8 +39,8 @@ function gotHands(results) {
 }
 
 function videoScale() {
-  return width / height > videoW / videoH ? width / videoW : height / videoH;
-  //return width / height > videoW / videoH ? height / videoH : width / videoW; //세로 비율에 맞게 조절
+  // return width / height > videoW / videoH ? width / videoW : height / videoH;
+  return width / height > videoW / videoH ? height / videoH : width / videoW; //세로 비율에 맞게 조절
 }
 
 function preload() {
@@ -80,31 +80,45 @@ function setup() {
   engine = Engine.create();
   world = engine.world;
 
-  walls.push(Bodies.rectangle(width * 0.5, 0, 10000, 100, { isStatic: true }));
+  walls.push(Bodies.rectangle(width * 0.5, -25, 10000, 50, { isStatic: true }));
   walls.push(
-    Bodies.rectangle(width, height * 0.5, 100, 10000, { isStatic: true })
+    Bodies.rectangle((width + videoW) * 0.5 + 25, height * 0.5, 50, 10000, {
+      isStatic: true,
+    })
   );
   walls.push(
-    Bodies.rectangle(width * 0.5, height, 10000, 100, { isStatic: true })
+    Bodies.rectangle(width * 0.5, height + 25, 10000, 50, { isStatic: true })
   );
-  walls.push(Bodies.rectangle(0, height * 0.5, 100, 10000, { isStatic: true }));
+  walls.push(
+    Bodies.rectangle(width - 25, height * 0.5, 50, 10000, {
+      isStatic: true,
+    })
+  );
 
   Composite.add(world, walls);
-  handCollider = Bodies.circle(-10000, -10000, 50); //생성 시 초기화 할 위치--초기에는 화면 밖에 만들어 보이지 않게 한다.
+  handCollider = Bodies.circle(0, 0, 50); //생성 시 초기화 할 위치--초기에는 화면 밖에 만들어 보이지 않게 한다.
   Composite.add(world, handCollider);
 
-  let stack = Matter.Composites.stack(60, 350, 75, 15, 0, 0, function (x, y) {
-    // Bodies.circle로 원을 생성
-    let ball = Matter.Bodies.circle(x, y, ballRadius, {
-      restitution: 0.0005, // 원의 튕김 정도
-      friction: 2, // 표면 마찰 증가
-      frictionAir: 0.5, // 공기 저항 증가
-      density: 0.02, // 질량 증가
-    });
-    balls.push({ ball: ball, initialPos: { x: x, y: y } });
+  let stack = Matter.Composites.stack(
+    width * 0.5 - 200,
+    height * 0.5 - 200,
+    10,
+    10,
+    0,
+    0,
+    function (x, y) {
+      // Bodies.circle로 원을 생성
+      let ball = Matter.Bodies.circle(x, y, ballRadius, {
+        restitution: 0.0005, // 원의 튕김 정도
+        friction: 2, // 표면 마찰 증가
+        frictionAir: 0.5, // 공기 저항 증가
+        density: 0.02, // 질량 증가
+      });
+      balls.push({ ball: ball, initialPos: { x: x, y: y } });
 
-    return ball;
-  });
+      return ball;
+    }
+  );
 
   // 생성된 스택을 월드에 추가
   Matter.Composite.add(world, stack);
@@ -134,34 +148,35 @@ function draw() {
   //   video.width * currentVideoScale,
   //   video.height * currentVideoScale
   // );
-  //
-  if (hands.length > 0) {
+
+  // if (hands.length > 0) {
+
+  // }
+
+  for (let i = 0; i < hands.length; i++) {
     Body.setPosition(
       handCollider,
       Vector.create(
         //엄지 위치에 handCollider 만들기
-        currentVideoZero.x + hands[0].keypoints[8].x * currentVideoScale,
-        currentVideoZero.y + hands[0].keypoints[8].y * currentVideoScale
+        currentVideoZero.x + hands[0].keypoints[9].x * currentVideoScale,
+        currentVideoZero.y + hands[0].keypoints[9].y * currentVideoScale
       )
     );
-  }
-
-  for (let i = 0; i < hands.length; i++) {
     let hand = hands[i];
     //엄지만 그리기
-    let keypointNo8 = hand.keypoints[8];
-    fill(66, 209, 245);
+    let keypointNo9 = hand.keypoints[9];
+    fill(245, 0, 80);
     noStroke();
-    //8번
+
     circle(
-      currentVideoZero.x + keypointNo8.x * currentVideoScale,
-      currentVideoZero.y + keypointNo8.y * currentVideoScale,
+      currentVideoZero.x + keypointNo9.x * currentVideoScale,
+      currentVideoZero.y + keypointNo9.y * currentVideoScale,
       30
     );
 
     noFill();
-    stroke(66, 209, 245, transparency);
-    strokeWeight(1);
+    stroke(245, 0, 80, transparency);
+    strokeWeight(2);
 
     FingerRad += 0.4;
     transparency -= 3;
@@ -171,8 +186,8 @@ function draw() {
     }
     //8번
     circle(
-      currentVideoZero.x + keypointNo8.x * currentVideoScale,
-      currentVideoZero.y + keypointNo8.y * currentVideoScale,
+      currentVideoZero.x + keypointNo9.x * currentVideoScale,
+      currentVideoZero.y + keypointNo9.y * currentVideoScale,
       FingerRad
     );
   }
@@ -182,22 +197,69 @@ function draw() {
     vertex(aVertex.x, aVertex.y);
   });
 
-  fill(255, 0, 0);
+  // fill(255, 0, 0);
+
   for (let i = 0; i < balls.length; i++) {
     let ball = balls[i].ball;
 
     // 각 공에 대해 초기 위치로 돌아가려는 힘을 적용
     let initialPos = balls[i].initialPos;
     let force = {
-      x: (initialPos.x - ball.position.x) * 0.01, // 초기 위치로 돌아가려는 힘
-      y: (initialPos.y - ball.position.y) * 0.01, // 초기 위치로 돌아가려는 힘
+      x: (initialPos.x - ball.position.x) * 0.02, // 초기 위치로 돌아가려는 힘
+      y: (initialPos.y - ball.position.y) * 0.02, // 초기 위치로 돌아가려는 힘
     };
 
     // 힘 적용
     Matter.Body.applyForce(ball, ball.position, force);
 
-    // 공 그리기
-    ellipse(ball.position.x, ball.position.y, ball.circleRadius * 2);
+    //거리를 구해준다.
+    let ballDistance = dist(
+      handCollider.position.x,
+      handCollider.position.y,
+      ball.position.x,
+      ball.position.y
+    );
+    // console.log('Ball Distance: ' + ballDistance);
+    colorGradientBlue = map(ballDistance, 0, 200, 0, 255);
+    colorGradientRed = map(ballDistance, 800, 0, 0, 255);
+    colorGradientGreen = map(ballDistance, 0, 500, 0, 255);
+
+    fill(colorGradientRed, colorGradientGreen, colorGradientBlue);
+    noStroke();
+    // strokeWeight(2);
+    // stroke(255, 0, 0);
+    if (ballDistance < ball.circleRadius * 5) {
+      ellipse(ball.position.x, ball.position.y, ball.circleRadius * 1);
+    } else {
+      ellipse(ball.position.x, ball.position.y, ball.circleRadius * 2);
+    }
+
+    // ellipse(ball.position.x, ball.position.y, ball.circleRadius * 2);
+
+    strokeWeight(3);
+    if (ballDistance < ball.circleRadius * 4) {
+      stroke(255, 255, 255, 5);
+    } else {
+      stroke(255, 255, 255, 60);
+    }
+    if (i >= 10 && i / 10 != 0) {
+      let underRightBall = balls[i - 10].ball;
+      line(
+        ball.position.x,
+        ball.position.y,
+        underRightBall.position.x,
+        underRightBall.position.y
+      );
+    }
+    if (i >= 1 && i % 10 != 0) {
+      let underRightBall = balls[i - 1].ball;
+      line(
+        ball.position.x,
+        ball.position.y,
+        underRightBall.position.x,
+        underRightBall.position.y
+      );
+    }
   }
 }
 
